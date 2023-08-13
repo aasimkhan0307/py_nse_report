@@ -26,7 +26,9 @@ load_dotenv()
 # Access the variable
 FOLDER_ID = os.getenv("FOLDER_ID")
 
-print("Key value:", FOLDER_ID)
+# Access the variable
+MODE = os.getenv("MODE")
+
 
 SERVICE_ACCOUNT_CREDENTIALS = {
   "type": "service_account",
@@ -1497,6 +1499,10 @@ if __name__ == "__main__":
     try:
         if rec is not None:
             print(rec)
-            generate_report(rec)
+            if MODE != 'prod':
+                print('[info]: This is running in dev mode, report will not be uploded')
+            else:
+                generate_report(rec)
+            
     except:
         print('NO RECORD CREATED!')
