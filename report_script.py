@@ -42,8 +42,8 @@ SERVICE_ACCOUNT_CREDENTIALS = {
   "universe_domain": "googleapis.com"
 }
 
-# FOLDER_ID = '1fPo6lRq6dIlhKhElGE1xqjj-3P9S-h5l'
-# FOLDER_ID = '1oyrdQy3dPd541VHFWx3ntKkCaauTCFZd'
+# FOLDER_ID = '1fPo6lRq6dIlhKhElGE1xqjj-3P9S-h5l' // asim's
+# FOLDER_ID = '1oyrdQy3dPd541VHFWx3ntKkCaauTCFZd' // amin's
 
 
 credentials = Credentials.from_service_account_info(SERVICE_ACCOUNT_CREDENTIALS, scopes=['https://www.googleapis.com/auth/drive'])
