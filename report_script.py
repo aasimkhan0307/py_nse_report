@@ -1,20 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
-
-
-
-# In[61]:
-
-
-#wtihout loop
-
 import subprocess
 from datetime import datetime
-#from dotenv import load_dotenv
 import os
 import json
 import requests #ext
@@ -41,18 +26,10 @@ from datetime import date
 
 from datetime import datetime
 
-
-# Load variables from .env file into environment
-#load_dotenv()
-
-# Access the variable
-#FOLDER_ID = os.getenv("FOLDER_ID")
-#FOLDER_ID ="1S9_6cV91ihf49my-9Guf0rkzXAtIGK48"
-#1oyrdQy3dPd541VHFWx3ntKkCaauTCFZd
 # FOLDER_ID ="1oyrdQy3dPd541VHFWx3ntKkCaauTCFZd"
 FOLDER_ID = "1Uv4bRac0Y1AQ2xqYlZ2PQ4RCx2CihEC_"
-# Access the variable
-#MODE = os.getenv("MODE")
+
+
 # MODE="dev"
 MODE ="prod"
 
@@ -70,8 +47,6 @@ SERVICE_ACCOUNT_CREDENTIALS = {
   "universe_domain": "googleapis.com"
 }
 
-# FOLDER_ID = '1fPo6lRq6dIlhKhElGE1xqjj-3P9S-h5l' // asim's
-# FOLDER_ID = '1oyrdQy3dPd541VHFWx3ntKkCaauTCFZd' // amin's
 
 
 credentials = Credentials.from_service_account_info(SERVICE_ACCOUNT_CREDENTIALS, scopes=['https://www.googleapis.com/auth/drive'])
@@ -104,13 +79,6 @@ def convert_get_to_curl(url, query_params=None, headers=None):
     curl_command.append("--compressed")
     return ' '.join(curl_command)
 
-# curl_command = convert_get_to_curl(api_url, query_parameters, request_headers)
-
-
-
-
-
-
 
 now = datetime.now()
 
@@ -138,8 +106,6 @@ nloop=1
 celisttemp=[]
 pelisttemp=[]
 
-
-#url https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY
 lp1=0
 while lp1<60:
     try:
@@ -154,10 +120,14 @@ while lp1<60:
 
         }
 
-        session =requests.session()
-        request=session.get(url,headers=headers)
-        cookies=dict(request.cookies)
-        response=session.get(url,headers=headers,cookies=cookies).json()
+        # session =requests.session()
+        # request=session.get(url,headers=headers)
+        # cookies=dict(request.cookies)
+        # response=session.get(url,headers=headers,cookies=cookies).json()
+
+        curl_command = convert_get_to_curl(url,{},headers)
+        response = _execute_curl(curl_command)
+
         rawdate=pd.DataFrame(response)
         rawop=pd.DataFrame(rawdate['filtered'],['data']).fillna(0)
 
@@ -814,10 +784,14 @@ while lp2<60:
 
         }
 
-        session =requests.session()
-        request=session.get(url,headers=headers)
-        cookies=dict(request.cookies)
-        response=session.get(url,headers=headers,cookies=cookies).json()
+        # session =requests.session()
+        # request=session.get(url,headers=headers)
+        # cookies=dict(request.cookies)
+        # response=session.get(url,headers=headers,cookies=cookies).json()
+
+        curl_command = convert_get_to_curl(url,{},headers)
+        response = _execute_curl(curl_command)
+
         rawdate=pd.DataFrame(response)
         rawop=pd.DataFrame(rawdate['filtered'],['data']).fillna(0)
 
@@ -1528,19 +1502,12 @@ def generate_report(df):
         df1 = pd.read_csv(data_io)
         
         
-        
         #dadding data
         comdata=pd.concat([df1, df], ignore_index=True)
 
-        
-        
-        
-        
-        
-        
+    
         #updated_data = _process_data(arr[1:],header,df)
         
-    
         #updated_df = pd.DataFrame(updated_data, columns=header)
         print('***** updated_df *****')
 
@@ -1565,8 +1532,8 @@ def generate_report(df):
 
 
 if __name__ == "__main__":
-    #rec = get_record();
     rec=nfdata.copy()
+    print(rec)
     try:
         if rec is not None:
             if MODE != 'prod':
