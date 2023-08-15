@@ -1,6 +1,20 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
+
+
+
+# In[61]:
+
+
+#wtihout loop
+
 import subprocess
 from datetime import datetime
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import os
 import json
 import requests #ext
@@ -8,6 +22,8 @@ import pandas as pd #ext
 import time
 import matplotlib.pyplot as plt #ext
 from datetime import datetime
+
+from io import StringIO
 
 # pip3 install pydrive google-auth
 from pydrive.auth import GoogleAuth
@@ -20,15 +36,25 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 import io
 
+
+from datetime import date
+
+from datetime import datetime
+
+
 # Load variables from .env file into environment
-load_dotenv()
+#load_dotenv()
 
 # Access the variable
-FOLDER_ID = os.getenv("FOLDER_ID")
-
+#FOLDER_ID = os.getenv("FOLDER_ID")
+#FOLDER_ID ="1S9_6cV91ihf49my-9Guf0rkzXAtIGK48"
+#1oyrdQy3dPd541VHFWx3ntKkCaauTCFZd
+FOLDER_ID ="1oyrdQy3dPd541VHFWx3ntKkCaauTCFZd"
+# FOLDER_ID = "1fPo6lRq6dIlhKhElGE1xqjj-3P9S-h5l"
 # Access the variable
-MODE = os.getenv("MODE")
-
+#MODE = os.getenv("MODE")
+# MODE="dev"
+MODE ="prod"
 
 SERVICE_ACCOUNT_CREDENTIALS = {
   "type": "service_account",
@@ -82,1323 +108,1351 @@ def convert_get_to_curl(url, query_params=None, headers=None):
 
 
 
-def get_record():
-    now = datetime.now()
 
-    current_time = now.strftime("%H:%M:%S")
 
-    Nf_Add_list=[]
-    Bf_Add_list=[]
 
-    nloop=1
 
-    while nloop < 20:
-        try:
-            ceoptiontype="CE"
-            peoptiontype="PE"
-            xsum=[]
-            ceL=[]
-            peL=[]
-            xceL=[]
-            xpeL=[]
-            lot=50
+now = datetime.now()
 
+current_time = now.strftime("%H:%M:%S")
 
-            celisttemp=[]
-            pelisttemp=[]
-            
-            #url https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY
 
-            url_nifty='https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY'
+ceoptiontype="CE"
+peoptiontype="PE"
 
-            headers= {
+ceL=[]
+peL=[]
+xceL=[]
+xpeL=[]
+lot=50
 
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
-                'accept-encoding' : 'gzip, deflate, br',
-                'accept-language' : 'en-US,en;q=0.9'
+xsum=[]
 
-            }
 
-            # session =requests.session()
-            # request=session.get(url,headers=headers)
-            # cookies=dict(request.cookies)
+Nf_Add_list=[]
+Bf_Add_list=[]
+nloop=1
 
-            # response=session.get(url,headers=headers,cookies=cookies).json()
-            print('curl-1 start')
-            curl_command = convert_get_to_curl(url_nifty,{},headers)
-            response = _execute_curl(curl_command)
-            if response == None:
-                raise Exception('curl-1 failed!')
 
-            print('curl-1 complete')
 
-            rawdate=pd.DataFrame(response)
-            rawop=pd.DataFrame(rawdate['filtered'],['data']).fillna(0)
+celisttemp=[]
+pelisttemp=[]
 
 
-            pe_values= rawop ['filtered']
-            pe1_values= pe_values ['data']
+#url https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY
+lp1=0
+while lp1<60:
+    try:
 
-            pe2_data=pd.DataFrame.from_dict(pe1_values, orient='columns')
+        url='https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY'
 
+        headers= {
 
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+            'accept-encoding' : 'gzip, deflate, br',
+            'accept-language' : 'en-US,en;q=0.9'
 
-            #df=pe2_data.sort_values(by=['expiryDate'])
+        }
 
+        session =requests.session()
+        request=session.get(url,headers=headers)
+        cookies=dict(request.cookies)
+        response=session.get(url,headers=headers,cookies=cookies).json()
+        rawdate=pd.DataFrame(response)
+        rawop=pd.DataFrame(rawdate['filtered'],['data']).fillna(0)
 
-            #CURRENT DATA-------------------------------------------------------------------------------
 
-            #df2=df[df["expiryDate"]==expiryDate]
+        pe_values= rawop ['filtered']
+        pe1_values= pe_values ['data']
 
+        pe2_data=pd.DataFrame.from_dict(pe1_values, orient='columns')
+        #print("st1")
 
 
+        break
+    except:
+        lp1+=1
+        # gap in run time
+        time.sleep(2)
 
-                #collection of CE DATA
 
-            CeDataRaw=pe2_data["CE"]
-            CeDataRaw=CeDataRaw.fillna(0)
-            CeDataRaw=CeDataRaw.items()
-            CeDataRaw = list (CeDataRaw)
-            CeDataRaw1 = pd.DataFrame(CeDataRaw)
-            sortlength = len(CeDataRaw1)
-            k = 0
-            while k < sortlength:
-                if CeDataRaw1.iloc[k,1]!=0 :
-                    celisttemp.append(CeDataRaw1.iloc[k,1])
 
+#df=pe2_data.sort_values(by=['expiryDate'])
 
 
-                k+=1
-            CeDataList=celisttemp
-            CedataFinal=pd.DataFrame.from_dict(CeDataList, orient='columns')
-            CedataFinal1=CedataFinal.sort_values(by=['strikePrice']).copy()
+#CURRENT DATA-------------------------------------------------------------------------------
 
+#df2=df[df["expiryDate"]==expiryDate]
 
 
 
 
-            #collection of PE DATA
+    #collection of CE DATA
 
-            PeDataRaw=pe2_data["PE"]
-            PeDataRaw=PeDataRaw.dropna()
-            PeDataRaw=PeDataRaw.items()
-            PeDataRaw = list (PeDataRaw)
-            PeDataRaw1 = pd.DataFrame(PeDataRaw)
-            sortlength = len(PeDataRaw1)
-            j = 0
-            while j < sortlength:
-                if PeDataRaw1.iloc[j,1]!=0 :
-                    pelisttemp.append(PeDataRaw1.iloc[j,1])
-                j+=1
-            PeDataList=pelisttemp
-            PedataFinal=pd.DataFrame.from_dict(PeDataList, orient='columns')
-            PedataFinal1=PedataFinal.sort_values(by=['strikePrice']).copy()
+CeDataRaw=pe2_data["CE"]
+CeDataRaw=CeDataRaw.fillna(0)
+CeDataRaw=CeDataRaw.items()
+CeDataRaw = list (CeDataRaw)
+CeDataRaw1 = pd.DataFrame(CeDataRaw)
+sortlength = len(CeDataRaw1)
+k = 0
+while k < sortlength:
+    if CeDataRaw1.iloc[k,1]!=0 :
+        celisttemp.append(CeDataRaw1.iloc[k,1])
 
 
 
+    k+=1
+CeDataList=celisttemp
+CedataFinal=pd.DataFrame.from_dict(CeDataList, orient='columns')
+CedataFinal1=CedataFinal.sort_values(by=['strikePrice']).copy()
 
-            #data analysis
 
-            cetotaloi=(CedataFinal1['openInterest'].sum())/10000000
-            cetotalvol=(CedataFinal1['totalTradedVolume'].sum())/10000000
-            cetradequantity=cetotalvol/cetotaloi
 
-            CedataFinal1['amount']=CedataFinal1['openInterest']*CedataFinal1['lastPrice']*lot
 
-            CedataFinal1['oldOi']=(CedataFinal1['changeinOpenInterest']*100)/CedataFinal1['changeinOpenInterest']
-            CedataFinal1['oldLtp']=(CedataFinal1['change']*100)/CedataFinal1['pChange']
-            CedataFinal1['oldAmount']=CedataFinal1['oldLtp']*CedataFinal1['oldOi']
-            CedataFinal1['ValueChange']=CedataFinal1['amount']-CedataFinal1['oldAmount']
-            CedataFinal1=(CedataFinal1.fillna(0)).copy()
 
+#collection of PE DATA
 
-            CedataFinal2=CedataFinal1.sort_values(by=['ValueChange']).copy()
+PeDataRaw=pe2_data["PE"]
+PeDataRaw=PeDataRaw.dropna()
+PeDataRaw=PeDataRaw.items()
+PeDataRaw = list (PeDataRaw)
+PeDataRaw1 = pd.DataFrame(PeDataRaw)
+sortlength = len(PeDataRaw1)
+j = 0
+while j < sortlength:
+    if PeDataRaw1.iloc[j,1]!=0 :
+        pelisttemp.append(PeDataRaw1.iloc[j,1])
+    j+=1
+PeDataList=pelisttemp
+PedataFinal=pd.DataFrame.from_dict(PeDataList, orient='columns')
+PedataFinal1=PedataFinal.sort_values(by=['strikePrice']).copy()
 
-            petotaloi=(PedataFinal1['openInterest'].sum())/10000000
-            petotalvol=(PedataFinal1['totalTradedVolume'].sum())/10000000
-            petradequantity=petotalvol/petotaloi
 
-            PedataFinal1['amount']=PedataFinal1['openInterest']*PedataFinal1['lastPrice']*lot
 
-            PedataFinal1['oldOi']=(PedataFinal1['changeinOpenInterest']*100)/PedataFinal1['changeinOpenInterest']
-            PedataFinal1['oldLtp']=(PedataFinal1['change']*100)/PedataFinal1['pChange']
-            PedataFinal1['oldAmount']=PedataFinal1['oldLtp']*PedataFinal1['oldOi']
-            PedataFinal1['ValueChange']=PedataFinal1['amount']-PedataFinal1['oldAmount']
-            PedataFinal1=(PedataFinal1.fillna(0)).copy()
 
+#data analysis
 
-            PedataFinal2=PedataFinal1.sort_values(by=['ValueChange']).copy()
+cetotaloi=(CedataFinal1['openInterest'].sum())/10000000
+cetotalvol=(CedataFinal1['totalTradedVolume'].sum())/10000000
+cetradequantity=cetotalvol/cetotaloi
 
-            #calculation for ATM strike Price
-            celistlength=len(CedataFinal1)-1
-            x=CedataFinal1.iloc[celistlength,18]
+CedataFinal1['amount']=CedataFinal1['openInterest']*CedataFinal1['lastPrice']*lot
 
-            zz=round(celistlength/2)
-            zz1=zz-1
-            strikediff=CedataFinal1.iloc[zz,0]-CedataFinal1.iloc[zz1,0]
+CedataFinal1['oldOi']=(CedataFinal1['changeinOpenInterest']*100)/CedataFinal1['changeinOpenInterest']
+CedataFinal1['oldLtp']=(CedataFinal1['change']*100)/CedataFinal1['pChange']
+CedataFinal1['oldAmount']=CedataFinal1['oldLtp']*CedataFinal1['oldOi']
+CedataFinal1['ValueChange']=CedataFinal1['amount']-CedataFinal1['oldAmount']
+CedataFinal1=(CedataFinal1.fillna(0)).copy()
 
 
+CedataFinal2=CedataFinal1.sort_values(by=['ValueChange']).copy()
 
 
-            x=round(x / strikediff)
 
-            y=x*strikediff
 
 
-            k=0
-            for k in range (celistlength):
-                if y==CedataFinal1.iloc[k,0]:
-                    atmstrike=k
-                    break
 
 
+petotaloi=(PedataFinal1['openInterest'].sum())/10000000
+petotalvol=(PedataFinal1['totalTradedVolume'].sum())/10000000
+petradequantity=petotalvol/petotaloi
 
-            ceatmstrikeprice=CedataFinal1.iloc[k,0]
-            ceatmchanval=round((CedataFinal1.iloc[k,23]/10000000),3)
-            ceatmltp=round((CedataFinal1.iloc[k,9]),2)
-            ceatmimp=round((CedataFinal1.iloc[k,8]),2)
-            ceatmoi=round((CedataFinal1.iloc[k,4]),3)
+PedataFinal1['amount']=PedataFinal1['openInterest']*PedataFinal1['lastPrice']*lot
 
+PedataFinal1['oldOi']=(PedataFinal1['changeinOpenInterest']*100)/PedataFinal1['changeinOpenInterest']
+PedataFinal1['oldLtp']=(PedataFinal1['change']*100)/PedataFinal1['pChange']
+PedataFinal1['oldAmount']=PedataFinal1['oldLtp']*PedataFinal1['oldOi']
+PedataFinal1['ValueChange']=PedataFinal1['amount']-PedataFinal1['oldAmount']
+PedataFinal1=(PedataFinal1.fillna(0)).copy()
 
 
-            pelistlength=len(PedataFinal1)-1
-            x=PedataFinal1.iloc[pelistlength,18]
-            x=round(x / strikediff)
+PedataFinal2=PedataFinal1.sort_values(by=['ValueChange']).copy()
 
-            y=x*strikediff
 
 
 
-            k=0
-            for k in range (pelistlength):
-                if y==PedataFinal1.iloc[k,0]:
-                    atmstrike=k
-                    break
 
 
 
-            peatmstrikeprice=PedataFinal1.iloc[k,0]
-            peatmchanval=round((PedataFinal1.iloc[k,23]/10000000),3)
-            peatmltp=round((PedataFinal1.iloc[k,9]),2)
-            peatmimp=round((PedataFinal1.iloc[k,8]),2)
-            peatmoi=round((PedataFinal1.iloc[k,4]),3)
 
 
-            newatm=y-strikediff*3
-            xnewatm=y+strikediff*4
-            xsum=[]
-            xbottomdetail=[]
-            xnonzero=[]
-            ii=-3
 
+#calculation for ATM strike Price
+celistlength=len(CedataFinal1)-1
+x=CedataFinal1.iloc[celistlength,18]
 
-            while newatm < (xnewatm):
+zz=round(celistlength/2)
+zz1=zz-1
+strikediff=CedataFinal1.iloc[zz,0]-CedataFinal1.iloc[zz1,0]
 
-                ceL=[]
-                peL=[]
-                xceL=[]
-                xpeL=[]
 
 
 
+x=round(x / strikediff)
 
+y=x*strikediff
 
-                #_______________________________________________________________
-                #_______________________________________________________________
 
-                atm=newatm
+k=0
+for k in range (celistlength):
+    if y==CedataFinal1.iloc[k,0]:
+        atmstrike=k
+        break
 
-                a=atm
-                b=atm+strikediff
-                c=atm+strikediff*2
-                d=atm+strikediff*3
-                e=atm+strikediff*4
 
-                xa=atm
-                xb=atm-strikediff
-                xc=atm-strikediff*2
-                xd=atm-strikediff*3
-                xe=atm-strikediff*4
 
+ceatmstrikeprice=CedataFinal1.iloc[k,0]
+ceatmchanval=round((CedataFinal1.iloc[k,23]/10000000),3)
+ceatmltp=round((CedataFinal1.iloc[k,9]),2)
+ceatmimp=round((CedataFinal1.iloc[k,8]),2)
+ceatmoi=round((CedataFinal1.iloc[k,4]),3)
 
 
-                #_______________________________________________________________
-                #_______________________________________________________________
 
+pelistlength=len(PedataFinal1)-1
+x=PedataFinal1.iloc[pelistlength,18]
+x=round(x / strikediff)
 
-                #-----------------new price------ce--------------
-                #-----1-----
-                k=0
-                for k in range (celistlength):
-                    if a==CedataFinal1.iloc[k,0]:
-                        ce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_a_oi=round((CedataFinal1.iloc[k,4]),3)
+y=x*strikediff
 
-                        break
 
-                k=0
-                for k in range (pelistlength):
-                    if a==PedataFinal1.iloc[k,0]:
-                        pe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break
+k=0
+for k in range (pelistlength):
+    if y==PedataFinal1.iloc[k,0]:
+        atmstrike=k
+        break
 
-                #-----2-----        
 
-                k=0
-                for k in range (celistlength):
-                    if b==CedataFinal1.iloc[k,0]:
-                        ce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_b_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break
-                k=0
-                for k in range (pelistlength):
-                    if b==PedataFinal1.iloc[k,0]:
-                        pe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_b_oi=round((PedataFinal1.iloc[k,4]),3)
+peatmstrikeprice=PedataFinal1.iloc[k,0]
+peatmchanval=round((PedataFinal1.iloc[k,23]/10000000),3)
+peatmltp=round((PedataFinal1.iloc[k,9]),2)
+peatmimp=round((PedataFinal1.iloc[k,8]),2)
+peatmoi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break
 
+newatm=y-strikediff*3
+xnewatm=y+strikediff*4
+xsum=[]
+xbottomdetail=[]
+xnonzero=[]
+ii=-3
 
-                #-----3------        
 
-                k=0
-                for k in range (celistlength):
-                    if c==CedataFinal1.iloc[k,0]:
-                        ce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_c_oi=round((CedataFinal1.iloc[k,4]),3)
+while newatm < (xnewatm):
 
-                        break   
+    ceL=[]
+    peL=[]
+    xceL=[]
+    xpeL=[]
 
-                k=0
-                for k in range (pelistlength):
-                    if c==PedataFinal1.iloc[k,0]:
-                        pe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_c_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break   
 
 
 
-                #-----4------          
+    #_______________________________________________________________
+    #_______________________________________________________________
 
-                k=0
-                for k in range (celistlength):
-                    if d==CedataFinal1.iloc[k,0]:
-                        ce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_d_oi=round((CedataFinal1.iloc[k,4]),3)
+    atm=newatm
 
-                        break          
+    a=atm
+    b=atm+strikediff
+    c=atm+strikediff*2
+    d=atm+strikediff*3
+    e=atm+strikediff*4
 
-                k=0
-                for k in range (pelistlength):
-                    if d==PedataFinal1.iloc[k,0]:
-                        pe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_d_oi=round((PedataFinal1.iloc[k,4]),3)
+    xa=atm
+    xb=atm-strikediff
+    xc=atm-strikediff*2
+    xd=atm-strikediff*3
+    xe=atm-strikediff*4
 
-                        break          
 
 
+    #_______________________________________________________________
+    #_______________________________________________________________
 
-                #-----5------          
 
+    #-----------------new price------ce--------------
+    #-----1-----
+    k=0
+    for k in range (celistlength):
+        if a==CedataFinal1.iloc[k,0]:
+            ce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                k=0
-                for k in range (celistlength):
-                    if e==CedataFinal1.iloc[k,0]:
-                        ce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_e_oi=round((CedataFinal1.iloc[k,4]),3)
+            break
 
-                        break  
+    k=0
+    for k in range (pelistlength):
+        if a==PedataFinal1.iloc[k,0]:
+            pe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
-                k=0
-                for k in range (pelistlength):
-                    if e==PedataFinal1.iloc[k,0]:
-                        pe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_e_oi=round((PedataFinal1.iloc[k,4]),3)
+    #-----2-----
 
-                        break  
+    k=0
+    for k in range (celistlength):
+        if b==CedataFinal1.iloc[k,0]:
+            ce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_b_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                #-----end------         
+            break
+    k=0
+    for k in range (pelistlength):
+        if b==PedataFinal1.iloc[k,0]:
+            pe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_b_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
-                #-----pe----------------------------
 
-                #-------x1-----------------
-                k=0
-                for k in range (celistlength):
-                    if xa==CedataFinal1.iloc[k,0]:
-                        xce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_a_oi=round((CedataFinal1.iloc[k,4]),3)
+    #-----3------
 
-                        break
+    k=0
+    for k in range (celistlength):
+        if c==CedataFinal1.iloc[k,0]:
+            ce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_c_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
+    k=0
+    for k in range (pelistlength):
+        if c==PedataFinal1.iloc[k,0]:
+            pe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_c_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                k=0
-                for k in range (pelistlength):
-                    if xa==PedataFinal1.iloc[k,0]:
-                        xpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
+            break
 
-                        break
 
 
-                #-------x2-----------------
+    #-----4------
 
-                k=0
-                for k in range (celistlength):
-                    if xb==CedataFinal1.iloc[k,0]:
-                        xce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_b_oi=round((CedataFinal1.iloc[k,4]),3)
+    k=0
+    for k in range (celistlength):
+        if d==CedataFinal1.iloc[k,0]:
+            ce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_d_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break
+            break
 
+    k=0
+    for k in range (pelistlength):
+        if d==PedataFinal1.iloc[k,0]:
+            pe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_d_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
 
 
-                k=0
-                for k in range (pelistlength):
-                    if xb==PedataFinal1.iloc[k,0]:
-                        xpe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_b_oi=round((PedataFinal1.iloc[k,4]),3)
+    #-----5------
 
-                        break
 
-                #-------x3-----------------
+    k=0
+    for k in range (celistlength):
+        if e==CedataFinal1.iloc[k,0]:
+            ce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_e_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                k=0
-                for k in range (celistlength):
-                    if xc==CedataFinal1.iloc[k,0]:
-                        xce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_c_oi=round((CedataFinal1.iloc[k,4]),3)
+            break
 
-                        break 
 
+    k=0
+    for k in range (pelistlength):
+        if e==PedataFinal1.iloc[k,0]:
+            pe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_e_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
+    #-----end------
 
-                k=0
-                for k in range (pelistlength):
-                    if xc==PedataFinal1.iloc[k,0]:
-                        xpe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_c_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break 
+    #-----pe----------------------------
 
+    #-------x1-----------------
+    k=0
+    for k in range (celistlength):
+        if xa==CedataFinal1.iloc[k,0]:
+            xce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
-                #-------x4-----------------        
-                k=0
-                for k in range (celistlength):
-                    if xd==CedataFinal1.iloc[k,0]:
-                        xce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_d_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break         
 
+    k=0
+    for k in range (pelistlength):
+        if xa==PedataFinal1.iloc[k,0]:
+            xpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
 
-                k=0
-                for k in range (pelistlength):
-                    if xd==PedataFinal1.iloc[k,0]:
-                        xpe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_d_oi=round((PedataFinal1.iloc[k,4]),3)
+    #-------x2-----------------
 
-                        break         
+    k=0
+    for k in range (celistlength):
+        if xb==CedataFinal1.iloc[k,0]:
+            xce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_b_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
-                #-------x5-----------------        
 
-                k=0
-                for k in range (celistlength):
-                    if xe==CedataFinal1.iloc[k,0]:
-                        xce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_e_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break         
 
 
+    k=0
+    for k in range (pelistlength):
+        if xb==PedataFinal1.iloc[k,0]:
+            xpe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_b_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                k=0
-                for k in range (pelistlength):
-                    if xe==PedataFinal1.iloc[k,0]:
-                        xpe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_e_oi=round((PedataFinal1.iloc[k,4]),3)
+            break
 
-                        break         
+    #-------x3-----------------
 
+    k=0
+    for k in range (celistlength):
+        if xc==CedataFinal1.iloc[k,0]:
+            xce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_c_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                #-------x--end-----------------        
+            break
 
 
 
-                amt_a=(((ce_a_ltp)*(ce_a_oi) + (pe_a_ltp)*(pe_a_oi) )*lot) /10000000 
-                amt_b=(((ce_b_ltp)*(ce_b_oi) + (pe_b_ltp)*(pe_b_oi) )*lot) /10000000 
-                amt_c=(((ce_c_ltp)*(ce_c_oi) + (pe_c_ltp)*(pe_c_oi) )*lot) /10000000 
-                amt_d=(((ce_d_ltp)*(ce_d_oi) + (pe_d_ltp)*(pe_d_oi) )*lot) /10000000 
-                amt_e=(((ce_e_ltp)*(ce_e_oi) + (pe_e_ltp)*(pe_e_oi) )*lot) /10000000 
 
+    k=0
+    for k in range (pelistlength):
+        if xc==PedataFinal1.iloc[k,0]:
+            xpe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_c_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
-                amt_cez=(((ce_a_ltp)*(ce_a_oi)+(ce_b_ltp)*(ce_b_oi)+(ce_c_ltp)*(ce_c_oi)+(ce_d_ltp)*(ce_d_oi)+(ce_e_ltp)*(ce_e_oi))*lot)/10000000
 
 
-                amt_xa=(((xce_a_ltp)*(xce_a_oi) + (xpe_a_ltp)*(xpe_a_oi) )*lot) /10000000 
-                amt_xb=(((xce_b_ltp)*(xce_b_oi) + (xpe_b_ltp)*(xpe_b_oi) )*lot) /10000000 
-                amt_xc=(((xce_c_ltp)*(xce_c_oi) + (xpe_c_ltp)*(xpe_c_oi) )*lot) /10000000 
-                amt_xd=(((xce_d_ltp)*(xce_d_oi) + (xpe_d_ltp)*(xpe_d_oi) )*lot) /10000000 
-                amt_xe=(((xce_e_ltp)*(xce_e_oi) + (xpe_e_ltp)*(xpe_e_oi) )*lot) /10000000 
+    #-------x4-----------------
+    k=0
+    for k in range (celistlength):
+        if xd==CedataFinal1.iloc[k,0]:
+            xce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_d_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
 
 
-                amt_pez= (((xpe_a_ltp)*(xpe_a_oi)+(xpe_b_ltp)*(xpe_b_oi)+(xpe_c_ltp)*(xpe_c_oi)+(xpe_d_ltp)*(xpe_d_oi)+(xpe_e_ltp)*(xpe_e_oi))*lot)/10000000
 
-                #---------calculation---part 1-----
-                atm_xyce_a=(((xce_a_ltp)*(xce_a_oi))*lot)  /10000000
-                atm_xype_a=(((xpe_a_ltp)*(xpe_a_oi))*lot)  /10000000
+    k=0
+    for k in range (pelistlength):
+        if xd==PedataFinal1.iloc[k,0]:
+            xpe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_d_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                atm_xyce_b=(((xce_b_ltp)*(xce_b_oi))*lot)  /10000000
-                atm_xype_b=(((xpe_b_ltp)*(xpe_b_oi))*lot)  /10000000
+            break
 
-                atm_xyce_c=(((xce_c_ltp)*(xce_c_oi))*lot)  /10000000
-                atm_xype_c=(((xpe_c_ltp)*(xpe_c_oi))*lot)  /10000000
 
-                atm_xyce_d=(((xce_d_ltp)*(xce_d_oi))*lot)  /10000000
-                atm_xype_d=(((xpe_d_ltp)*(xpe_d_oi))*lot)  /10000000
+    #-------x5-----------------
 
-                atm_xyce_e=(((xce_e_ltp)*(xce_e_oi))*lot)  /10000000
-                atm_xype_e=(((xpe_e_ltp)*(xpe_e_oi))*lot)  /10000000
+    k=0
+    for k in range (celistlength):
+        if xe==CedataFinal1.iloc[k,0]:
+            xce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_e_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
-                #---------------------part 2------------
-                atm_yce_a=(((ce_a_ltp)*(ce_a_oi))*lot)  /10000000
-                atm_ype_a=(((pe_a_ltp)*(pe_a_oi))*lot)  /10000000
 
-                atm_yce_b=(((ce_b_ltp)*(ce_b_oi))*lot)  /10000000
-                atm_ype_b=(((pe_b_ltp)*(pe_b_oi))*lot)  /10000000
 
-                atm_yce_c=(((ce_c_ltp)*(ce_c_oi))*lot)  /10000000
-                atm_ype_c=(((pe_c_ltp)*(pe_c_oi))*lot)  /10000000
+    k=0
+    for k in range (pelistlength):
+        if xe==PedataFinal1.iloc[k,0]:
+            xpe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_e_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                atm_yce_d=(((ce_d_ltp)*(ce_d_oi))*lot)  /10000000
-                atm_ype_d=(((pe_d_ltp)*(pe_d_oi))*lot)  /10000000
+            break
 
-                atm_yce_e=(((ce_e_ltp)*(ce_e_oi))*lot)  /10000000
-                atm_ype_e=(((pe_e_ltp)*(pe_e_oi))*lot)  /10000000
 
+    #-------x--end-----------------
 
-                Totalamt=atm_ype_b+atm_ype_c+atm_ype_d+atm_ype_e
-                xTotalamt=atm_xyce_b+atm_xyce_c+atm_xyce_d+atm_xyce_e
 
 
+    amt_a=(((ce_a_ltp)*(ce_a_oi) + (pe_a_ltp)*(pe_a_oi) )*lot) /10000000
+    amt_b=(((ce_b_ltp)*(ce_b_oi) + (pe_b_ltp)*(pe_b_oi) )*lot) /10000000
+    amt_c=(((ce_c_ltp)*(ce_c_oi) + (pe_c_ltp)*(pe_c_oi) )*lot) /10000000
+    amt_d=(((ce_d_ltp)*(ce_d_oi) + (pe_d_ltp)*(pe_d_oi) )*lot) /10000000
+    amt_e=(((ce_e_ltp)*(ce_e_oi) + (pe_e_ltp)*(pe_e_oi) )*lot) /10000000
 
-                #-------------------calculation for other range---------------------------
 
-                k=0
-                for k in range (celistlength):
-                    if e<CedataFinal1.iloc[k,0]:
-                        yce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        yce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        ceL.append([CedataFinal1.iloc[k,0],yce_a_ltp,yce_a_oi])
+    amt_cez=(((ce_a_ltp)*(ce_a_oi)+(ce_b_ltp)*(ce_b_oi)+(ce_c_ltp)*(ce_c_oi)+(ce_d_ltp)*(ce_d_oi)+(ce_e_ltp)*(ce_e_oi))*lot)/10000000
 
 
-                k=0
-                for k in range (pelistlength):
-                    if e<PedataFinal1.iloc[k,0]:
-                        ype_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        ype_a_oi=round((PedataFinal1.iloc[k,4]),3)
+    amt_xa=(((xce_a_ltp)*(xce_a_oi) + (xpe_a_ltp)*(xpe_a_oi) )*lot) /10000000
+    amt_xb=(((xce_b_ltp)*(xce_b_oi) + (xpe_b_ltp)*(xpe_b_oi) )*lot) /10000000
+    amt_xc=(((xce_c_ltp)*(xce_c_oi) + (xpe_c_ltp)*(xpe_c_oi) )*lot) /10000000
+    amt_xd=(((xce_d_ltp)*(xce_d_oi) + (xpe_d_ltp)*(xpe_d_oi) )*lot) /10000000
+    amt_xe=(((xce_e_ltp)*(xce_e_oi) + (xpe_e_ltp)*(xpe_e_oi) )*lot) /10000000
 
-                        peL.append([PedataFinal1.iloc[k,0],ype_a_ltp,ype_a_oi])
 
-                #-----------------
 
-                k=0
-                for k in range (celistlength):
-                    if xe>CedataFinal1.iloc[k,0]:
-                        zce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        zce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        xceL.append([CedataFinal1.iloc[k,0],zce_a_ltp,zce_a_oi])
+    amt_pez= (((xpe_a_ltp)*(xpe_a_oi)+(xpe_b_ltp)*(xpe_b_oi)+(xpe_c_ltp)*(xpe_c_oi)+(xpe_d_ltp)*(xpe_d_oi)+(xpe_e_ltp)*(xpe_e_oi))*lot)/10000000
 
+    #---------calculation---part 1-----
+    atm_xyce_a=(((xce_a_ltp)*(xce_a_oi))*lot)  /10000000
+    atm_xype_a=(((xpe_a_ltp)*(xpe_a_oi))*lot)  /10000000
 
-                k=0
-                for k in range (pelistlength):
-                    if xe>PedataFinal1.iloc[k,0]:
-                        zpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        zpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
+    atm_xyce_b=(((xce_b_ltp)*(xce_b_oi))*lot)  /10000000
+    atm_xype_b=(((xpe_b_ltp)*(xpe_b_oi))*lot)  /10000000
 
-                        xpeL.append([PedataFinal1.iloc[k,0],zpe_a_ltp,zpe_a_oi])
+    atm_xyce_c=(((xce_c_ltp)*(xce_c_oi))*lot)  /10000000
+    atm_xype_c=(((xpe_c_ltp)*(xpe_c_oi))*lot)  /10000000
 
+    atm_xyce_d=(((xce_d_ltp)*(xce_d_oi))*lot)  /10000000
+    atm_xype_d=(((xpe_d_ltp)*(xpe_d_oi))*lot)  /10000000
 
-                #------calculation for range sum
+    atm_xyce_e=(((xce_e_ltp)*(xce_e_oi))*lot)  /10000000
+    atm_xype_e=(((xpe_e_ltp)*(xpe_e_oi))*lot)  /10000000
 
-                dfce = pd.DataFrame(ceL, columns = ['stk','ltp','0i'])
-                dfpe = pd.DataFrame(peL, columns = ['stk','ltp','0i'])
 
-                xdfce = pd.DataFrame(xceL, columns = ['stk','ltp','0i'])
-                xdfpe = pd.DataFrame(xpeL, columns = ['stk','ltp','0i'])
+    #---------------------part 2------------
+    atm_yce_a=(((ce_a_ltp)*(ce_a_oi))*lot)  /10000000
+    atm_ype_a=(((pe_a_ltp)*(pe_a_oi))*lot)  /10000000
 
+    atm_yce_b=(((ce_b_ltp)*(ce_b_oi))*lot)  /10000000
+    atm_ype_b=(((pe_b_ltp)*(pe_b_oi))*lot)  /10000000
 
-                dfce['sum']=dfce['ltp']*dfce['0i']
-                dfpe['sum']=dfpe['ltp']*dfpe['0i']
+    atm_yce_c=(((ce_c_ltp)*(ce_c_oi))*lot)  /10000000
+    atm_ype_c=(((pe_c_ltp)*(pe_c_oi))*lot)  /10000000
 
-                xdfce['sum']=xdfce['ltp']*xdfce['0i']
-                xdfpe['sum']=xdfpe['ltp']*xdfpe['0i']
+    atm_yce_d=(((ce_d_ltp)*(ce_d_oi))*lot)  /10000000
+    atm_ype_d=(((pe_d_ltp)*(pe_d_oi))*lot)  /10000000
 
-                topsum=((dfce['sum'].sum()+dfpe['sum'].sum())*lot)/10000000
+    atm_yce_e=(((ce_e_ltp)*(ce_e_oi))*lot)  /10000000
+    atm_ype_e=(((pe_e_ltp)*(pe_e_oi))*lot)  /10000000
 
 
-                bottomsum=((xdfce['sum'].sum()+xdfpe['sum'].sum())*lot)/10000000
+    Totalamt=atm_ype_b+atm_ype_c+atm_ype_d+atm_ype_e
+    xTotalamt=atm_xyce_b+atm_xyce_c+atm_xyce_d+atm_xyce_e
 
-                topsumce=((dfce['sum'].sum())*lot)/10000000
-                topsumpe=((dfpe['sum'].sum())*lot)/10000000
 
 
-                bottomsumce=((xdfce['sum'].sum())*lot)/10000000
-                bottomsumpe=((xdfpe['sum'].sum())*lot)/10000000
+    #-------------------calculation for other range---------------------------
 
+    k=0
+    for k in range (celistlength):
+        if e<CedataFinal1.iloc[k,0]:
+            yce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            yce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                #--------------------------------------------
+            ceL.append([CedataFinal1.iloc[k,0],yce_a_ltp,yce_a_oi])
 
-                #other calculation  
 
-                pcr_tt=round( petotaloi/cetotaloi  ,3)
+    k=0
+    for k in range (pelistlength):
+        if e<PedataFinal1.iloc[k,0]:
+            ype_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            ype_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                celenght=len(CedataFinal2)-1
-                pelenght=len(PedataFinal2)-1
+            peL.append([PedataFinal1.iloc[k,0],ype_a_ltp,ype_a_oi])
 
-                cehighChanval=round((CedataFinal2.iloc[celenght,23]/10000000),3)
-                cehighstrikeval=CedataFinal2.iloc[celenght,0]
-                cehighltp=round((CedataFinal2.iloc[celenght,9]),2)
-                cehighimp=round((CedataFinal2.iloc[celenght,8]),2)
-                cechoi=round((CedataFinal2.iloc[celenght,4]),3)
+    #-----------------
 
+    k=0
+    for k in range (celistlength):
+        if xe>CedataFinal1.iloc[k,0]:
+            zce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            zce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            xceL.append([CedataFinal1.iloc[k,0],zce_a_ltp,zce_a_oi])
 
-                pehighChanval=round((PedataFinal2.iloc[pelenght,23]/10000000),3)
-                pehighstrikeval=PedataFinal2.iloc[pelenght,0]
-                pehighltp=round((PedataFinal2.iloc[pelenght,9]),2)
-                pehighimp=round((PedataFinal2.iloc[pelenght,8]),2)
-                pechoi=round((PedataFinal2.iloc[pelenght,4]),3)
 
+    k=0
+    for k in range (pelistlength):
+        if xe>PedataFinal1.iloc[k,0]:
+            zpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            zpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                underlyval=CedataFinal2.iloc[celenght,18]
-                atmpcr=round(peatmoi/ceatmoi  ,3)
-                pcr_ch=round(cechoi/pechoi  ,3)
+            xpeL.append([PedataFinal1.iloc[k,0],zpe_a_ltp,zpe_a_oi])
 
 
+    #------calculation for range sum
 
-                TotalAmount=(CedataFinal1['amount'].sum()+PedataFinal1['amount'].sum())
-                amountincr=TotalAmount/10000000
-                ceper=(CedataFinal1['amount'].sum()/TotalAmount)*100
-                peper=(PedataFinal1['amount'].sum()/TotalAmount)*100
+    dfce = pd.DataFrame(ceL, columns = ['stk','ltp','0i'])
+    dfpe = pd.DataFrame(peL, columns = ['stk','ltp','0i'])
 
+    xdfce = pd.DataFrame(xceL, columns = ['stk','ltp','0i'])
+    xdfpe = pd.DataFrame(xpeL, columns = ['stk','ltp','0i'])
 
-                xsum.append((round((amt_cez+amt_pez ),2),round(atm_xyce_a,2),round(atm_xype_a,2)))
-                xnonzero.append ((round((xTotalamt),2),round((Totalamt),2),round((amt_cez),2),round((amt_pez),2)))
-                xbottomdetail.append((round(bottomsumce,2),round(bottomsumpe,2),round(bottomsum,2),round(topsumce,2),round(topsumpe,2),round(topsum,2)))
 
+    dfce['sum']=dfce['ltp']*dfce['0i']
+    dfpe['sum']=dfpe['ltp']*dfpe['0i']
 
+    xdfce['sum']=xdfce['ltp']*xdfce['0i']
+    xdfpe['sum']=xdfpe['ltp']*xdfpe['0i']
 
+    topsum=((dfce['sum'].sum()+dfpe['sum'].sum())*lot)/10000000
 
-                ii=ii+1
-                newatm=newatm+strikediff
 
+    bottomsum=((xdfce['sum'].sum()+xdfpe['sum'].sum())*lot)/10000000
 
-            xsum = pd.DataFrame(xsum, columns = ['sum','atmce','atmpe'])
-            botsum=xsum.iloc[0,0]+xsum.iloc[1,0]+xsum.iloc[2,0]
-            topsum=xsum.iloc[4,0]+xsum.iloc[5,0]+xsum.iloc[6,0]
-            atsum=xsum.iloc[3,0]
+    topsumce=((dfce['sum'].sum())*lot)/10000000
+    topsumpe=((dfpe['sum'].sum())*lot)/10000000
 
-            xnonzero= pd.DataFrame(xnonzero, columns = ['cenonzero','penonzero','cezero','pezero'])
 
-            xbottomdetail = pd.DataFrame(xbottomdetail, columns = ['bce','bpe','bsum','tce','tpe','tsum'])
+    bottomsumce=((xdfce['sum'].sum())*lot)/10000000
+    bottomsumpe=((xdfpe['sum'].sum())*lot)/10000000
 
 
+    #--------------------------------------------
 
+    #other calculation
 
-            Nf_Add_list.append((nloop,round(((botsum/3)/amountincr),2),round((atsum/amountincr),2),round(((topsum/3)/amountincr),2)))
+    pcr_tt=round( petotaloi/cetotaloi  ,3)
 
+    celenght=len(CedataFinal2)-1
+    pelenght=len(PedataFinal2)-1
 
+    cehighChanval=round((CedataFinal2.iloc[celenght,23]/10000000),3)
+    cehighstrikeval=CedataFinal2.iloc[celenght,0]
+    cehighltp=round((CedataFinal2.iloc[celenght,9]),2)
+    cehighimp=round((CedataFinal2.iloc[celenght,8]),2)
+    cechoi=round((CedataFinal2.iloc[celenght,4]),3)
 
-            #------------------------------bk-----------------------------bk-----------------------------------------------------------
-            #------------------------------bk-----------------------------bk-----------------------------------------------------------
-            #------------------------------bk-----------------------------bk-----------------------------------------------------------
 
-            #------------------------------bk-----------------------------bk-----------------------------------------------------------
 
-            ceL=[]
-            peL=[]
-            xceL=[]
-            xpeL=[]
-            lot=25
+    pehighChanval=round((PedataFinal2.iloc[pelenght,23]/10000000),3)
+    pehighstrikeval=PedataFinal2.iloc[pelenght,0]
+    pehighltp=round((PedataFinal2.iloc[pelenght,9]),2)
+    pehighimp=round((PedataFinal2.iloc[pelenght,8]),2)
+    pechoi=round((PedataFinal2.iloc[pelenght,4]),3)
 
-            xsum=[]
 
+    underlyval=CedataFinal2.iloc[celenght,18]
+    atmpcr=round(peatmoi/ceatmoi  ,3)
+    pcr_ch=round(cechoi/pechoi  ,3)
 
-            celisttemp=[]
-            pelisttemp=[]
 
 
+    TotalAmount=(CedataFinal1['amount'].sum()+PedataFinal1['amount'].sum())
+    amountincr=TotalAmount/10000000
+    ceper=(CedataFinal1['amount'].sum()/TotalAmount)*100
+    peper=(PedataFinal1['amount'].sum()/TotalAmount)*100
 
 
-            url_banknifty='https://www.nseindia.com/api/option-chain-indices?symbol=BANKNIFTY'
+    #print ("------",newatm,"---",ii,"---")
+    #print(round(atm_xyce_a,2),"-",xa,"-",round(atm_xype_a,2),"-",round(atm_xyce_a+atm_xype_a,2))
+    #print(round(amt_cez,2),"--z--",round(amt_pez,2),"-T-",round((amt_cez+amt_pez ),2))
+    #print(round((xTotalamt),2),"-nz--",round((Totalamt),2),"-T-",round((xTotalamt+Totalamt),2))
+    #print("TT-", round(((Totalamt+xTotalamt)+(amt_cez+amt_pez)),2))
+    #print("\n")
+    xsum.append((round((amt_cez+amt_pez ),2),round(atm_xyce_a,2),round(atm_xype_a,2)))
+    xnonzero.append ((round((xTotalamt),2),round((Totalamt),2),round((amt_cez),2),round((amt_pez),2)))
+    xbottomdetail.append((round(bottomsumce,2),round(bottomsumpe,2),round(bottomsum,2),round(topsumce,2),round(topsumpe,2),round(topsum,2)))
 
-            headers= {
 
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
-                'accept-encoding' : 'gzip, deflate, br',
-                'accept-language' : 'en-US,en;q=0.9'
 
-            }
 
-            # session =requests.session()
-            # request=session.get(url,headers=headers)
-            # cookies=dict(request.cookies)
-            # response=session.get(url,headers=headers,cookies=cookies).json()
+    ii=ii+1
+    newatm=newatm+strikediff
 
-            print('curl-2 start')
-            curl_command = convert_get_to_curl(url_banknifty,{},headers)
-            response = _execute_curl(curl_command)
-            if response == None:
-                raise Exception('curl-2 failed!')
-                
-            print('curl-2 complete')
 
-            rawdate=pd.DataFrame(response)
-            rawop=pd.DataFrame(rawdate['filtered'],['data']).fillna(0)
+xsum = pd.DataFrame(xsum, columns = ['sum','atmce','atmpe'])
+botsum=xsum.iloc[0,0]+xsum.iloc[1,0]+xsum.iloc[2,0]
+topsum=xsum.iloc[4,0]+xsum.iloc[5,0]+xsum.iloc[6,0]
+atsum=xsum.iloc[3,0]
 
+xnonzero= pd.DataFrame(xnonzero, columns = ['cenonzero','penonzero','cezero','pezero'])
 
-            pe_values= rawop ['filtered']
-            pe1_values= pe_values ['data']
+xbottomdetail = pd.DataFrame(xbottomdetail, columns = ['bce','bpe','bsum','tce','tpe','tsum'])
 
-            pe2_data=pd.DataFrame.from_dict(pe1_values, orient='columns')
+#data storage
 
+Nf_Add_list.append((current_time,underlyval,round((xbottomdetail.iloc[3,2]/amountincr),2),round((xbottomdetail.iloc[3,5]/amountincr),2),round(amountincr,2),round(((botsum/3)/amountincr),2),round((atsum/amountincr),2),round(((topsum/3)/amountincr),2)))
 
 
-            #df=pe2_data.sort_values(by=['expiryDate'])
 
+#------------------------------bk-----------------------------bk-----------------------------------------------------------
+#------------------------------bk-----------------------------bk-----------------------------------------------------------
+#------------------------------bk-----------------------------bk-----------------------------------------------------------
 
-            #CURRENT DATA-------------------------------------------------------------------------------
+#------------------------------bk-----------------------------bk-----------------------------------------------------------
 
-            #df2=df[df["expiryDate"]==expiryDate]
+ceL=[]
+peL=[]
+xceL=[]
+xpeL=[]
+lot=15
 
+xsum=[]
 
 
+celisttemp=[]
+pelisttemp=[]
 
-                #collection of CE DATA
+lp2=0
+while lp2<60:
+    try:
+        url='https://www.nseindia.com/api/option-chain-indices?symbol=BANKNIFTY'
 
-            CeDataRaw=pe2_data["CE"]
-            CeDataRaw=CeDataRaw.fillna(0)
-            CeDataRaw=CeDataRaw.items()
-            CeDataRaw = list (CeDataRaw)
-            CeDataRaw1 = pd.DataFrame(CeDataRaw)
-            sortlength = len(CeDataRaw1)
-            k = 0
-            while k < sortlength:
-                if CeDataRaw1.iloc[k,1]!=0 :
-                    celisttemp.append(CeDataRaw1.iloc[k,1])
+        headers= {
 
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+            'accept-encoding' : 'gzip, deflate, br',
+            'accept-language' : 'en-US,en;q=0.9'
 
+        }
 
-                k+=1
-            CeDataList=celisttemp
-            CedataFinal=pd.DataFrame.from_dict(CeDataList, orient='columns')
-            CedataFinal1=CedataFinal.sort_values(by=['strikePrice']).copy()
+        session =requests.session()
+        request=session.get(url,headers=headers)
+        cookies=dict(request.cookies)
+        response=session.get(url,headers=headers,cookies=cookies).json()
+        rawdate=pd.DataFrame(response)
+        rawop=pd.DataFrame(rawdate['filtered'],['data']).fillna(0)
 
 
+        pe_values= rawop ['filtered']
+        pe1_values= pe_values ['data']
 
+        pe2_data=pd.DataFrame.from_dict(pe1_values, orient='columns')
+        #print("st2")
 
+        break
+    except:
+        lp2+=1
+        # gap in run time
+        time.sleep(2)
 
-            #collection of PE DATA
 
-            PeDataRaw=pe2_data["PE"]
-            PeDataRaw=PeDataRaw.dropna()
-            PeDataRaw=PeDataRaw.items()
-            PeDataRaw = list (PeDataRaw)
-            PeDataRaw1 = pd.DataFrame(PeDataRaw)
-            sortlength = len(PeDataRaw1)
-            j = 0
-            while j < sortlength:
-                if PeDataRaw1.iloc[j,1]!=0 :
-                    pelisttemp.append(PeDataRaw1.iloc[j,1])
-                j+=1
-            PeDataList=pelisttemp
-            PedataFinal=pd.DataFrame.from_dict(PeDataList, orient='columns')
-            PedataFinal1=PedataFinal.sort_values(by=['strikePrice']).copy()
 
+#df=pe2_data.sort_values(by=['expiryDate'])
 
 
+#CURRENT DATA-------------------------------------------------------------------------------
 
-            #data analysis
+#df2=df[df["expiryDate"]==expiryDate]
 
-            cetotaloi=(CedataFinal1['openInterest'].sum())/10000000
-            cetotalvol=(CedataFinal1['totalTradedVolume'].sum())/10000000
-            cetradequantity=cetotalvol/cetotaloi
 
-            CedataFinal1['amount']=CedataFinal1['openInterest']*CedataFinal1['lastPrice']*lot
 
-            CedataFinal1['oldOi']=(CedataFinal1['changeinOpenInterest']*100)/CedataFinal1['changeinOpenInterest']
-            CedataFinal1['oldLtp']=(CedataFinal1['change']*100)/CedataFinal1['pChange']
-            CedataFinal1['oldAmount']=CedataFinal1['oldLtp']*CedataFinal1['oldOi']
-            CedataFinal1['ValueChange']=CedataFinal1['amount']-CedataFinal1['oldAmount']
-            CedataFinal1=(CedataFinal1.fillna(0)).copy()
 
+    #collection of CE DATA
 
-            CedataFinal2=CedataFinal1.sort_values(by=['ValueChange']).copy()
+CeDataRaw=pe2_data["CE"]
+CeDataRaw=CeDataRaw.fillna(0)
+CeDataRaw=CeDataRaw.items()
+CeDataRaw = list (CeDataRaw)
+CeDataRaw1 = pd.DataFrame(CeDataRaw)
+sortlength = len(CeDataRaw1)
+k = 0
+while k < sortlength:
+    if CeDataRaw1.iloc[k,1]!=0 :
+        celisttemp.append(CeDataRaw1.iloc[k,1])
 
-            petotaloi=(PedataFinal1['openInterest'].sum())/10000000
-            petotalvol=(PedataFinal1['totalTradedVolume'].sum())/10000000
-            petradequantity=petotalvol/petotaloi
 
-            PedataFinal1['amount']=PedataFinal1['openInterest']*PedataFinal1['lastPrice']*lot
 
-            PedataFinal1['oldOi']=(PedataFinal1['changeinOpenInterest']*100)/PedataFinal1['changeinOpenInterest']
-            PedataFinal1['oldLtp']=(PedataFinal1['change']*100)/PedataFinal1['pChange']
-            PedataFinal1['oldAmount']=PedataFinal1['oldLtp']*PedataFinal1['oldOi']
-            PedataFinal1['ValueChange']=PedataFinal1['amount']-PedataFinal1['oldAmount']
-            PedataFinal1=(PedataFinal1.fillna(0)).copy()
+    k+=1
+CeDataList=celisttemp
+CedataFinal=pd.DataFrame.from_dict(CeDataList, orient='columns')
+CedataFinal1=CedataFinal.sort_values(by=['strikePrice']).copy()
 
 
-            PedataFinal2=PedataFinal1.sort_values(by=['ValueChange']).copy()
 
-            #calculation for ATM strike Price
-            celistlength=len(CedataFinal1)-1
-            x=CedataFinal1.iloc[celistlength,18]
 
-            zz=round(celistlength/2)
-            zz1=zz-1
-            strikediff=CedataFinal1.iloc[zz,0]-CedataFinal1.iloc[zz1,0]
 
+#collection of PE DATA
 
+PeDataRaw=pe2_data["PE"]
+PeDataRaw=PeDataRaw.dropna()
+PeDataRaw=PeDataRaw.items()
+PeDataRaw = list (PeDataRaw)
+PeDataRaw1 = pd.DataFrame(PeDataRaw)
+sortlength = len(PeDataRaw1)
+j = 0
+while j < sortlength:
+    if PeDataRaw1.iloc[j,1]!=0 :
+        pelisttemp.append(PeDataRaw1.iloc[j,1])
+    j+=1
+PeDataList=pelisttemp
+PedataFinal=pd.DataFrame.from_dict(PeDataList, orient='columns')
+PedataFinal1=PedataFinal.sort_values(by=['strikePrice']).copy()
 
 
-            x=round(x / strikediff)
 
-            y=x*strikediff
 
+#data analysis
 
-            k=0
-            for k in range (celistlength):
-                if y==CedataFinal1.iloc[k,0]:
-                    atmstrike=k
-                    break
+cetotaloi=(CedataFinal1['openInterest'].sum())/10000000
+cetotalvol=(CedataFinal1['totalTradedVolume'].sum())/10000000
+cetradequantity=cetotalvol/cetotaloi
 
+CedataFinal1['amount']=CedataFinal1['openInterest']*CedataFinal1['lastPrice']*lot
 
+CedataFinal1['oldOi']=(CedataFinal1['changeinOpenInterest']*100)/CedataFinal1['changeinOpenInterest']
+CedataFinal1['oldLtp']=(CedataFinal1['change']*100)/CedataFinal1['pChange']
+CedataFinal1['oldAmount']=CedataFinal1['oldLtp']*CedataFinal1['oldOi']
+CedataFinal1['ValueChange']=CedataFinal1['amount']-CedataFinal1['oldAmount']
+CedataFinal1=(CedataFinal1.fillna(0)).copy()
 
-            ceatmstrikeprice=CedataFinal1.iloc[k,0]
-            ceatmchanval=round((CedataFinal1.iloc[k,23]/10000000),3)
-            ceatmltp=round((CedataFinal1.iloc[k,9]),2)
-            ceatmimp=round((CedataFinal1.iloc[k,8]),2)
-            ceatmoi=round((CedataFinal1.iloc[k,4]),3)
 
+CedataFinal2=CedataFinal1.sort_values(by=['ValueChange']).copy()
 
 
-            pelistlength=len(PedataFinal1)-1
-            x=PedataFinal1.iloc[pelistlength,18]
-            x=round(x / strikediff)
 
-            y=x*strikediff
 
 
 
-            k=0
-            for k in range (pelistlength):
-                if y==PedataFinal1.iloc[k,0]:
-                    atmstrike=k
-                    break
 
+petotaloi=(PedataFinal1['openInterest'].sum())/10000000
+petotalvol=(PedataFinal1['totalTradedVolume'].sum())/10000000
+petradequantity=petotalvol/petotaloi
 
+PedataFinal1['amount']=PedataFinal1['openInterest']*PedataFinal1['lastPrice']*lot
 
-            peatmstrikeprice=PedataFinal1.iloc[k,0]
-            peatmchanval=round((PedataFinal1.iloc[k,23]/10000000),3)
-            peatmltp=round((PedataFinal1.iloc[k,9]),2)
-            peatmimp=round((PedataFinal1.iloc[k,8]),2)
-            peatmoi=round((PedataFinal1.iloc[k,4]),3)
+PedataFinal1['oldOi']=(PedataFinal1['changeinOpenInterest']*100)/PedataFinal1['changeinOpenInterest']
+PedataFinal1['oldLtp']=(PedataFinal1['change']*100)/PedataFinal1['pChange']
+PedataFinal1['oldAmount']=PedataFinal1['oldLtp']*PedataFinal1['oldOi']
+PedataFinal1['ValueChange']=PedataFinal1['amount']-PedataFinal1['oldAmount']
+PedataFinal1=(PedataFinal1.fillna(0)).copy()
 
 
-            newatm=y-strikediff*3
-            xnewatm=y+strikediff*4
-            xsum=[]
-            xbottomdetail=[]
-            xnonzero=[]
-            ii=-3
+PedataFinal2=PedataFinal1.sort_values(by=['ValueChange']).copy()
 
 
-            while newatm < (xnewatm):
 
-                ceL=[]
-                peL=[]
-                xceL=[]
-                xpeL=[]
 
 
 
 
 
-                #_______________________________________________________________
-                #_______________________________________________________________
 
-                atm=newatm
 
-                a=atm
-                b=atm+strikediff
-                c=atm+strikediff*2
-                d=atm+strikediff*3
-                e=atm+strikediff*4
+#calculation for ATM strike Price
+celistlength=len(CedataFinal1)-1
+x=CedataFinal1.iloc[celistlength,18]
 
-                xa=atm
-                xb=atm-strikediff
-                xc=atm-strikediff*2
-                xd=atm-strikediff*3
-                xe=atm-strikediff*4
+zz=round(celistlength/2)
+zz1=zz-1
+strikediff=CedataFinal1.iloc[zz,0]-CedataFinal1.iloc[zz1,0]
 
 
 
-                #_______________________________________________________________
-                #_______________________________________________________________
 
+x=round(x / strikediff)
 
-                #-----------------new price------ce--------------
-                #-----1-----
-                k=0
-                for k in range (celistlength):
-                    if a==CedataFinal1.iloc[k,0]:
-                        ce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_a_oi=round((CedataFinal1.iloc[k,4]),3)
+y=x*strikediff
 
-                        break
 
-                k=0
-                for k in range (pelistlength):
-                    if a==PedataFinal1.iloc[k,0]:
-                        pe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_a_oi=round((PedataFinal1.iloc[k,4]),3)
+k=0
+for k in range (celistlength):
+    if y==CedataFinal1.iloc[k,0]:
+        atmstrike=k
+        break
 
-                        break
 
-                #-----2-----        
 
-                k=0
-                for k in range (celistlength):
-                    if b==CedataFinal1.iloc[k,0]:
-                        ce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_b_oi=round((CedataFinal1.iloc[k,4]),3)
+ceatmstrikeprice=CedataFinal1.iloc[k,0]
+ceatmchanval=round((CedataFinal1.iloc[k,23]/10000000),3)
+ceatmltp=round((CedataFinal1.iloc[k,9]),2)
+ceatmimp=round((CedataFinal1.iloc[k,8]),2)
+ceatmoi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break
-                k=0
-                for k in range (pelistlength):
-                    if b==PedataFinal1.iloc[k,0]:
-                        pe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_b_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break
 
+pelistlength=len(PedataFinal1)-1
+x=PedataFinal1.iloc[pelistlength,18]
+x=round(x / strikediff)
 
-                #-----3------        
+y=x*strikediff
 
-                k=0
-                for k in range (celistlength):
-                    if c==CedataFinal1.iloc[k,0]:
-                        ce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_c_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break   
 
-                k=0
-                for k in range (pelistlength):
-                    if c==PedataFinal1.iloc[k,0]:
-                        pe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_c_oi=round((PedataFinal1.iloc[k,4]),3)
+k=0
+for k in range (pelistlength):
+    if y==PedataFinal1.iloc[k,0]:
+        atmstrike=k
+        break
 
-                        break   
 
 
+peatmstrikeprice=PedataFinal1.iloc[k,0]
+peatmchanval=round((PedataFinal1.iloc[k,23]/10000000),3)
+peatmltp=round((PedataFinal1.iloc[k,9]),2)
+peatmimp=round((PedataFinal1.iloc[k,8]),2)
+peatmoi=round((PedataFinal1.iloc[k,4]),3)
 
-                #-----4------          
 
-                k=0
-                for k in range (celistlength):
-                    if d==CedataFinal1.iloc[k,0]:
-                        ce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_d_oi=round((CedataFinal1.iloc[k,4]),3)
+newatm=y-strikediff*3
+xnewatm=y+strikediff*4
+xsum=[]
+xbottomdetail=[]
+xnonzero=[]
+ii=-3
 
-                        break          
 
-                k=0
-                for k in range (pelistlength):
-                    if d==PedataFinal1.iloc[k,0]:
-                        pe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_d_oi=round((PedataFinal1.iloc[k,4]),3)
+while newatm < (xnewatm):
 
-                        break          
+    ceL=[]
+    peL=[]
+    xceL=[]
+    xpeL=[]
 
 
 
-                #-----5------          
 
 
-                k=0
-                for k in range (celistlength):
-                    if e==CedataFinal1.iloc[k,0]:
-                        ce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        ce_e_oi=round((CedataFinal1.iloc[k,4]),3)
+    #_______________________________________________________________
+    #_______________________________________________________________
 
-                        break  
+    atm=newatm
 
+    a=atm
+    b=atm+strikediff
+    c=atm+strikediff*2
+    d=atm+strikediff*3
+    e=atm+strikediff*4
 
-                k=0
-                for k in range (pelistlength):
-                    if e==PedataFinal1.iloc[k,0]:
-                        pe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        pe_e_oi=round((PedataFinal1.iloc[k,4]),3)
+    xa=atm
+    xb=atm-strikediff
+    xc=atm-strikediff*2
+    xd=atm-strikediff*3
+    xe=atm-strikediff*4
 
-                        break  
 
-                #-----end------         
 
+    #_______________________________________________________________
+    #_______________________________________________________________
 
-                #-----pe----------------------------
 
-                #-------x1-----------------
-                k=0
-                for k in range (celistlength):
-                    if xa==CedataFinal1.iloc[k,0]:
-                        xce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_a_oi=round((CedataFinal1.iloc[k,4]),3)
+    #-----------------new price------ce--------------
+    #-----1-----
+    k=0
+    for k in range (celistlength):
+        if a==CedataFinal1.iloc[k,0]:
+            ce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break
+            break
 
+    k=0
+    for k in range (pelistlength):
+        if a==PedataFinal1.iloc[k,0]:
+            pe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
-                k=0
-                for k in range (pelistlength):
-                    if xa==PedataFinal1.iloc[k,0]:
-                        xpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
+    #-----2-----
 
-                        break
+    k=0
+    for k in range (celistlength):
+        if b==CedataFinal1.iloc[k,0]:
+            ce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_b_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
+    k=0
+    for k in range (pelistlength):
+        if b==PedataFinal1.iloc[k,0]:
+            pe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_b_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                #-------x2-----------------
+            break
 
-                k=0
-                for k in range (celistlength):
-                    if xb==CedataFinal1.iloc[k,0]:
-                        xce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_b_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break
+    #-----3------
 
+    k=0
+    for k in range (celistlength):
+        if c==CedataFinal1.iloc[k,0]:
+            ce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_c_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
+    k=0
+    for k in range (pelistlength):
+        if c==PedataFinal1.iloc[k,0]:
+            pe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_c_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
-                k=0
-                for k in range (pelistlength):
-                    if xb==PedataFinal1.iloc[k,0]:
-                        xpe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_b_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break
 
-                #-------x3-----------------
+    #-----4------
 
-                k=0
-                for k in range (celistlength):
-                    if xc==CedataFinal1.iloc[k,0]:
-                        xce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_c_oi=round((CedataFinal1.iloc[k,4]),3)
+    k=0
+    for k in range (celistlength):
+        if d==CedataFinal1.iloc[k,0]:
+            ce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_d_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break 
+            break
 
+    k=0
+    for k in range (pelistlength):
+        if d==PedataFinal1.iloc[k,0]:
+            pe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_d_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
 
-                k=0
-                for k in range (pelistlength):
-                    if xc==PedataFinal1.iloc[k,0]:
-                        xpe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_c_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break 
+    #-----5------
 
 
+    k=0
+    for k in range (celistlength):
+        if e==CedataFinal1.iloc[k,0]:
+            ce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
+            ce_e_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                #-------x4-----------------        
-                k=0
-                for k in range (celistlength):
-                    if xd==CedataFinal1.iloc[k,0]:
-                        xce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_d_oi=round((CedataFinal1.iloc[k,4]),3)
+            break
 
-                        break         
 
+    k=0
+    for k in range (pelistlength):
+        if e==PedataFinal1.iloc[k,0]:
+            pe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
+            pe_e_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
+    #-----end------
 
-                k=0
-                for k in range (pelistlength):
-                    if xd==PedataFinal1.iloc[k,0]:
-                        xpe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_d_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break         
+    #-----pe----------------------------
 
+    #-------x1-----------------
+    k=0
+    for k in range (celistlength):
+        if xa==CedataFinal1.iloc[k,0]:
+            xce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                #-------x5-----------------        
+            break
 
-                k=0
-                for k in range (celistlength):
-                    if xe==CedataFinal1.iloc[k,0]:
-                        xce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        xce_e_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        break         
 
+    k=0
+    for k in range (pelistlength):
+        if xa==PedataFinal1.iloc[k,0]:
+            xpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
-                k=0
-                for k in range (pelistlength):
-                    if xe==PedataFinal1.iloc[k,0]:
-                        xpe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        xpe_e_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        break         
+    #-------x2-----------------
 
+    k=0
+    for k in range (celistlength):
+        if xb==CedataFinal1.iloc[k,0]:
+            xce_b_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_b_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                #-------x--end-----------------        
+            break
 
 
 
-                amt_a=(((ce_a_ltp)*(ce_a_oi) + (pe_a_ltp)*(pe_a_oi) )*lot) /10000000 
-                amt_b=(((ce_b_ltp)*(ce_b_oi) + (pe_b_ltp)*(pe_b_oi) )*lot) /10000000 
-                amt_c=(((ce_c_ltp)*(ce_c_oi) + (pe_c_ltp)*(pe_c_oi) )*lot) /10000000 
-                amt_d=(((ce_d_ltp)*(ce_d_oi) + (pe_d_ltp)*(pe_d_oi) )*lot) /10000000 
-                amt_e=(((ce_e_ltp)*(ce_e_oi) + (pe_e_ltp)*(pe_e_oi) )*lot) /10000000 
 
 
+    k=0
+    for k in range (pelistlength):
+        if xb==PedataFinal1.iloc[k,0]:
+            xpe_b_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_b_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                amt_cez=(((ce_a_ltp)*(ce_a_oi)+(ce_b_ltp)*(ce_b_oi)+(ce_c_ltp)*(ce_c_oi)+(ce_d_ltp)*(ce_d_oi)+(ce_e_ltp)*(ce_e_oi))*lot)/10000000
+            break
 
+    #-------x3-----------------
 
-                amt_xa=(((xce_a_ltp)*(xce_a_oi) + (xpe_a_ltp)*(xpe_a_oi) )*lot) /10000000 
-                amt_xb=(((xce_b_ltp)*(xce_b_oi) + (xpe_b_ltp)*(xpe_b_oi) )*lot) /10000000 
-                amt_xc=(((xce_c_ltp)*(xce_c_oi) + (xpe_c_ltp)*(xpe_c_oi) )*lot) /10000000 
-                amt_xd=(((xce_d_ltp)*(xce_d_oi) + (xpe_d_ltp)*(xpe_d_oi) )*lot) /10000000 
-                amt_xe=(((xce_e_ltp)*(xce_e_oi) + (xpe_e_ltp)*(xpe_e_oi) )*lot) /10000000 
+    k=0
+    for k in range (celistlength):
+        if xc==CedataFinal1.iloc[k,0]:
+            xce_c_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_c_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
 
 
-                amt_pez= (((xpe_a_ltp)*(xpe_a_oi)+(xpe_b_ltp)*(xpe_b_oi)+(xpe_c_ltp)*(xpe_c_oi)+(xpe_d_ltp)*(xpe_d_oi)+(xpe_e_ltp)*(xpe_e_oi))*lot)/10000000
 
-                #---------calculation---part 1-----
-                atm_xyce_a=(((xce_a_ltp)*(xce_a_oi))*lot)  /10000000
-                atm_xype_a=(((xpe_a_ltp)*(xpe_a_oi))*lot)  /10000000
+    k=0
+    for k in range (pelistlength):
+        if xc==PedataFinal1.iloc[k,0]:
+            xpe_c_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_c_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                atm_xyce_b=(((xce_b_ltp)*(xce_b_oi))*lot)  /10000000
-                atm_xype_b=(((xpe_b_ltp)*(xpe_b_oi))*lot)  /10000000
+            break
 
-                atm_xyce_c=(((xce_c_ltp)*(xce_c_oi))*lot)  /10000000
-                atm_xype_c=(((xpe_c_ltp)*(xpe_c_oi))*lot)  /10000000
 
-                atm_xyce_d=(((xce_d_ltp)*(xce_d_oi))*lot)  /10000000
-                atm_xype_d=(((xpe_d_ltp)*(xpe_d_oi))*lot)  /10000000
 
-                atm_xyce_e=(((xce_e_ltp)*(xce_e_oi))*lot)  /10000000
-                atm_xype_e=(((xpe_e_ltp)*(xpe_e_oi))*lot)  /10000000
+    #-------x4-----------------
+    k=0
+    for k in range (celistlength):
+        if xd==CedataFinal1.iloc[k,0]:
+            xce_d_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_d_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
-                #---------------------part 2------------
-                atm_yce_a=(((ce_a_ltp)*(ce_a_oi))*lot)  /10000000
-                atm_ype_a=(((pe_a_ltp)*(pe_a_oi))*lot)  /10000000
 
-                atm_yce_b=(((ce_b_ltp)*(ce_b_oi))*lot)  /10000000
-                atm_ype_b=(((pe_b_ltp)*(pe_b_oi))*lot)  /10000000
 
-                atm_yce_c=(((ce_c_ltp)*(ce_c_oi))*lot)  /10000000
-                atm_ype_c=(((pe_c_ltp)*(pe_c_oi))*lot)  /10000000
 
-                atm_yce_d=(((ce_d_ltp)*(ce_d_oi))*lot)  /10000000
-                atm_ype_d=(((pe_d_ltp)*(pe_d_oi))*lot)  /10000000
+    k=0
+    for k in range (pelistlength):
+        if xd==PedataFinal1.iloc[k,0]:
+            xpe_d_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_d_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                atm_yce_e=(((ce_e_ltp)*(ce_e_oi))*lot)  /10000000
-                atm_ype_e=(((pe_e_ltp)*(pe_e_oi))*lot)  /10000000
+            break
 
 
-                Totalamt=atm_ype_b+atm_ype_c+atm_ype_d+atm_ype_e
-                xTotalamt=atm_xyce_b+atm_xyce_c+atm_xyce_d+atm_xyce_e
+    #-------x5-----------------
 
+    k=0
+    for k in range (celistlength):
+        if xe==CedataFinal1.iloc[k,0]:
+            xce_e_ltp=round((CedataFinal1.iloc[k,9]),2)
+            xce_e_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            break
 
-                #-------------------calculation for other range---------------------------
 
-                k=0
-                for k in range (celistlength):
-                    if e<CedataFinal1.iloc[k,0]:
-                        yce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        yce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        ceL.append([CedataFinal1.iloc[k,0],yce_a_ltp,yce_a_oi])
+    k=0
+    for k in range (pelistlength):
+        if xe==PedataFinal1.iloc[k,0]:
+            xpe_e_ltp=round((PedataFinal1.iloc[k,9]),2)
+            xpe_e_oi=round((PedataFinal1.iloc[k,4]),3)
 
+            break
 
-                k=0
-                for k in range (pelistlength):
-                    if e<PedataFinal1.iloc[k,0]:
-                        ype_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        ype_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        peL.append([PedataFinal1.iloc[k,0],ype_a_ltp,ype_a_oi])
+    #-------x--end-----------------
 
-                #-----------------
 
-                k=0
-                for k in range (celistlength):
-                    if xe>CedataFinal1.iloc[k,0]:
-                        zce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
-                        zce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                        xceL.append([CedataFinal1.iloc[k,0],zce_a_ltp,zce_a_oi])
+    amt_a=(((ce_a_ltp)*(ce_a_oi) + (pe_a_ltp)*(pe_a_oi) )*lot) /10000000
+    amt_b=(((ce_b_ltp)*(ce_b_oi) + (pe_b_ltp)*(pe_b_oi) )*lot) /10000000
+    amt_c=(((ce_c_ltp)*(ce_c_oi) + (pe_c_ltp)*(pe_c_oi) )*lot) /10000000
+    amt_d=(((ce_d_ltp)*(ce_d_oi) + (pe_d_ltp)*(pe_d_oi) )*lot) /10000000
+    amt_e=(((ce_e_ltp)*(ce_e_oi) + (pe_e_ltp)*(pe_e_oi) )*lot) /10000000
 
 
-                k=0
-                for k in range (pelistlength):
-                    if xe>PedataFinal1.iloc[k,0]:
-                        zpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
-                        zpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                        xpeL.append([PedataFinal1.iloc[k,0],zpe_a_ltp,zpe_a_oi])
+    amt_cez=(((ce_a_ltp)*(ce_a_oi)+(ce_b_ltp)*(ce_b_oi)+(ce_c_ltp)*(ce_c_oi)+(ce_d_ltp)*(ce_d_oi)+(ce_e_ltp)*(ce_e_oi))*lot)/10000000
 
 
-                #------calculation for range sum
+    amt_xa=(((xce_a_ltp)*(xce_a_oi) + (xpe_a_ltp)*(xpe_a_oi) )*lot) /10000000
+    amt_xb=(((xce_b_ltp)*(xce_b_oi) + (xpe_b_ltp)*(xpe_b_oi) )*lot) /10000000
+    amt_xc=(((xce_c_ltp)*(xce_c_oi) + (xpe_c_ltp)*(xpe_c_oi) )*lot) /10000000
+    amt_xd=(((xce_d_ltp)*(xce_d_oi) + (xpe_d_ltp)*(xpe_d_oi) )*lot) /10000000
+    amt_xe=(((xce_e_ltp)*(xce_e_oi) + (xpe_e_ltp)*(xpe_e_oi) )*lot) /10000000
 
-                dfce = pd.DataFrame(ceL, columns = ['stk','ltp','0i'])
-                dfpe = pd.DataFrame(peL, columns = ['stk','ltp','0i'])
 
-                xdfce = pd.DataFrame(xceL, columns = ['stk','ltp','0i'])
-                xdfpe = pd.DataFrame(xpeL, columns = ['stk','ltp','0i'])
 
 
-                dfce['sum']=dfce['ltp']*dfce['0i']
-                dfpe['sum']=dfpe['ltp']*dfpe['0i']
+    amt_pez= (((xpe_a_ltp)*(xpe_a_oi)+(xpe_b_ltp)*(xpe_b_oi)+(xpe_c_ltp)*(xpe_c_oi)+(xpe_d_ltp)*(xpe_d_oi)+(xpe_e_ltp)*(xpe_e_oi))*lot)/10000000
 
-                xdfce['sum']=xdfce['ltp']*xdfce['0i']
-                xdfpe['sum']=xdfpe['ltp']*xdfpe['0i']
+    #---------calculation---part 1-----
+    atm_xyce_a=(((xce_a_ltp)*(xce_a_oi))*lot)  /10000000
+    atm_xype_a=(((xpe_a_ltp)*(xpe_a_oi))*lot)  /10000000
 
-                topsum=((dfce['sum'].sum()+dfpe['sum'].sum())*lot)/10000000
+    atm_xyce_b=(((xce_b_ltp)*(xce_b_oi))*lot)  /10000000
+    atm_xype_b=(((xpe_b_ltp)*(xpe_b_oi))*lot)  /10000000
 
+    atm_xyce_c=(((xce_c_ltp)*(xce_c_oi))*lot)  /10000000
+    atm_xype_c=(((xpe_c_ltp)*(xpe_c_oi))*lot)  /10000000
 
-                bottomsum=((xdfce['sum'].sum()+xdfpe['sum'].sum())*lot)/10000000
+    atm_xyce_d=(((xce_d_ltp)*(xce_d_oi))*lot)  /10000000
+    atm_xype_d=(((xpe_d_ltp)*(xpe_d_oi))*lot)  /10000000
 
-                topsumce=((dfce['sum'].sum())*lot)/10000000
-                topsumpe=((dfpe['sum'].sum())*lot)/10000000
+    atm_xyce_e=(((xce_e_ltp)*(xce_e_oi))*lot)  /10000000
+    atm_xype_e=(((xpe_e_ltp)*(xpe_e_oi))*lot)  /10000000
 
 
-                bottomsumce=((xdfce['sum'].sum())*lot)/10000000
-                bottomsumpe=((xdfpe['sum'].sum())*lot)/10000000
+    #---------------------part 2------------
+    atm_yce_a=(((ce_a_ltp)*(ce_a_oi))*lot)  /10000000
+    atm_ype_a=(((pe_a_ltp)*(pe_a_oi))*lot)  /10000000
 
+    atm_yce_b=(((ce_b_ltp)*(ce_b_oi))*lot)  /10000000
+    atm_ype_b=(((pe_b_ltp)*(pe_b_oi))*lot)  /10000000
 
-                #--------------------------------------------
+    atm_yce_c=(((ce_c_ltp)*(ce_c_oi))*lot)  /10000000
+    atm_ype_c=(((pe_c_ltp)*(pe_c_oi))*lot)  /10000000
 
-                #other calculation  
+    atm_yce_d=(((ce_d_ltp)*(ce_d_oi))*lot)  /10000000
+    atm_ype_d=(((pe_d_ltp)*(pe_d_oi))*lot)  /10000000
 
-                pcr_tt=round( petotaloi/cetotaloi  ,3)
+    atm_yce_e=(((ce_e_ltp)*(ce_e_oi))*lot)  /10000000
+    atm_ype_e=(((pe_e_ltp)*(pe_e_oi))*lot)  /10000000
 
-                celenght=len(CedataFinal2)-1
-                pelenght=len(PedataFinal2)-1
 
-                cehighChanval=round((CedataFinal2.iloc[celenght,23]/10000000),3)
-                cehighstrikeval=CedataFinal2.iloc[celenght,0]
-                cehighltp=round((CedataFinal2.iloc[celenght,9]),2)
-                cehighimp=round((CedataFinal2.iloc[celenght,8]),2)
-                cechoi=round((CedataFinal2.iloc[celenght,4]),3)
+    Totalamt=atm_ype_b+atm_ype_c+atm_ype_d+atm_ype_e
+    xTotalamt=atm_xyce_b+atm_xyce_c+atm_xyce_d+atm_xyce_e
 
 
 
-                pehighChanval=round((PedataFinal2.iloc[pelenght,23]/10000000),3)
-                pehighstrikeval=PedataFinal2.iloc[pelenght,0]
-                pehighltp=round((PedataFinal2.iloc[pelenght,9]),2)
-                pehighimp=round((PedataFinal2.iloc[pelenght,8]),2)
-                pechoi=round((PedataFinal2.iloc[pelenght,4]),3)
+    #-------------------calculation for other range---------------------------
 
+    k=0
+    for k in range (celistlength):
+        if e<CedataFinal1.iloc[k,0]:
+            yce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            yce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
-                underlyval=CedataFinal2.iloc[celenght,18]
-                atmpcr=round(peatmoi/ceatmoi  ,3)
-                pcr_ch=round(cechoi/pechoi  ,3)
+            ceL.append([CedataFinal1.iloc[k,0],yce_a_ltp,yce_a_oi])
 
 
+    k=0
+    for k in range (pelistlength):
+        if e<PedataFinal1.iloc[k,0]:
+            ype_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            ype_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                TotalAmount=(CedataFinal1['amount'].sum()+PedataFinal1['amount'].sum())
-                amountincr=TotalAmount/10000000
-                ceper=(CedataFinal1['amount'].sum()/TotalAmount)*100
-                peper=(PedataFinal1['amount'].sum()/TotalAmount)*100
+            peL.append([PedataFinal1.iloc[k,0],ype_a_ltp,ype_a_oi])
 
+    #-----------------
 
-                xsum.append((round((amt_cez+amt_pez ),2),round(atm_xyce_a,2),round(atm_xype_a,2)))
-                xnonzero.append ((round((xTotalamt),2),round((Totalamt),2),round((amt_cez),2),round((amt_pez),2)))
-                xbottomdetail.append((round(bottomsumce,2),round(bottomsumpe,2),round(bottomsum,2),round(topsumce,2),round(topsumpe,2),round(topsum,2)))
+    k=0
+    for k in range (celistlength):
+        if xe>CedataFinal1.iloc[k,0]:
+            zce_a_ltp=round((CedataFinal1.iloc[k,9]),2)
+            zce_a_oi=round((CedataFinal1.iloc[k,4]),3)
 
+            xceL.append([CedataFinal1.iloc[k,0],zce_a_ltp,zce_a_oi])
 
 
+    k=0
+    for k in range (pelistlength):
+        if xe>PedataFinal1.iloc[k,0]:
+            zpe_a_ltp=round((PedataFinal1.iloc[k,9]),2)
+            zpe_a_oi=round((PedataFinal1.iloc[k,4]),3)
 
-                ii=ii+1
-                newatm=newatm+strikediff
+            xpeL.append([PedataFinal1.iloc[k,0],zpe_a_ltp,zpe_a_oi])
 
 
-            xsum = pd.DataFrame(xsum, columns = ['sum','atmce','atmpe'])
-            botsum=xsum.iloc[0,0]+xsum.iloc[1,0]+xsum.iloc[2,0]
-            topsum=xsum.iloc[4,0]+xsum.iloc[5,0]+xsum.iloc[6,0]
-            atsum=xsum.iloc[3,0]
+    #------calculation for range sum
 
-            xnonzero= pd.DataFrame(xnonzero, columns = ['cenonzero','penonzero','cezero','pezero'])
+    dfce = pd.DataFrame(ceL, columns = ['stk','ltp','0i'])
+    dfpe = pd.DataFrame(peL, columns = ['stk','ltp','0i'])
 
-            xbottomdetail = pd.DataFrame(xbottomdetail, columns = ['bce','bpe','bsum','tce','tpe','tsum'])
+    xdfce = pd.DataFrame(xceL, columns = ['stk','ltp','0i'])
+    xdfpe = pd.DataFrame(xpeL, columns = ['stk','ltp','0i'])
 
 
+    dfce['sum']=dfce['ltp']*dfce['0i']
+    dfpe['sum']=dfpe['ltp']*dfpe['0i']
 
+    xdfce['sum']=xdfce['ltp']*xdfce['0i']
+    xdfpe['sum']=xdfpe['ltp']*xdfpe['0i']
 
-            Bf_Add_list.append((round(((botsum/3)/amountincr),2),round((atsum/amountincr),2),round(((topsum/3)/amountincr),2)))
-            
-            # nloop+=1
-            
-            
-            nfdata=pd.DataFrame(Nf_Add_list, columns = ['sn','val1','val2','val3'])
-            bfdata=pd.DataFrame(Bf_Add_list, columns = ['val4','val5','val6'])
-            
-            nfdata['val4']=bfdata['val4']
-            nfdata['val5']=bfdata['val5']
-            nfdata['val6']=bfdata['val6']
+    topsum=((dfce['sum'].sum()+dfpe['sum'].sum())*lot)/10000000
 
-            return nfdata.iloc[:1]
-        except:
-            print("failed ",nloop)
-            time.sleep(2)
-        finally:
-            nloop+=1
-    return None
 
+    bottomsum=((xdfce['sum'].sum()+xdfpe['sum'].sum())*lot)/10000000
 
-# def get_folder_id(drive_service, folder_name):
-#     print('get folder id..')
-#     results = drive_service.files().list(q=f"mimeType='application/vnd.google-apps.folder' and name='{folder_name}'").execute()
-#     items = results.get('files', [])
+    topsumce=((dfce['sum'].sum())*lot)/10000000
+    topsumpe=((dfpe['sum'].sum())*lot)/10000000
+
+
+    bottomsumce=((xdfce['sum'].sum())*lot)/10000000
+    bottomsumpe=((xdfpe['sum'].sum())*lot)/10000000
+
+
+    #--------------------------------------------
+
+    #other calculation
+
+    pcr_tt=round( petotaloi/cetotaloi  ,3)
+
+    celenght=len(CedataFinal2)-1
+    pelenght=len(PedataFinal2)-1
+
+    cehighChanval=round((CedataFinal2.iloc[celenght,23]/10000000),3)
+    cehighstrikeval=CedataFinal2.iloc[celenght,0]
+    cehighltp=round((CedataFinal2.iloc[celenght,9]),2)
+    cehighimp=round((CedataFinal2.iloc[celenght,8]),2)
+    cechoi=round((CedataFinal2.iloc[celenght,4]),3)
+
+
+
+    pehighChanval=round((PedataFinal2.iloc[pelenght,23]/10000000),3)
+    pehighstrikeval=PedataFinal2.iloc[pelenght,0]
+    pehighltp=round((PedataFinal2.iloc[pelenght,9]),2)
+    pehighimp=round((PedataFinal2.iloc[pelenght,8]),2)
+    pechoi=round((PedataFinal2.iloc[pelenght,4]),3)
+
+
+    underlyval=CedataFinal2.iloc[celenght,18]
+    atmpcr=round(peatmoi/ceatmoi  ,3)
+    pcr_ch=round(cechoi/pechoi  ,3)
+
+
+
+    TotalAmount=(CedataFinal1['amount'].sum()+PedataFinal1['amount'].sum())
+    amountincr=TotalAmount/10000000
+    ceper=(CedataFinal1['amount'].sum()/TotalAmount)*100
+    peper=(PedataFinal1['amount'].sum()/TotalAmount)*100
     
-#     if not items:
-#         print(f"Folder '{folder_name}' not found.")
-#         return None
-#     else:
-#         folder_id = items[0]['id']
-#         print(f"Folder ID for '{folder_name}': {folder_id}")
-#         return folder_id
+    xsum.append((round((amt_cez+amt_pez ),2),round(atm_xyce_a,2),round(atm_xype_a,2)))
+    xnonzero.append ((round((xTotalamt),2),round((Totalamt),2),round((amt_cez),2),round((amt_pez),2)))
+    xbottomdetail.append((round(bottomsumce,2),round(bottomsumpe,2),round(bottomsum,2),round(topsumce,2),round(topsumpe,2),round(topsum,2)))
+
+
+
+
+    ii=ii+1
+    newatm=newatm+strikediff
+
+
+xsum = pd.DataFrame(xsum, columns = ['sum','atmce','atmpe'])
+botsum=xsum.iloc[0,0]+xsum.iloc[1,0]+xsum.iloc[2,0]
+topsum=xsum.iloc[4,0]+xsum.iloc[5,0]+xsum.iloc[6,0]
+atsum=xsum.iloc[3,0]
+
+xnonzero= pd.DataFrame(xnonzero, columns = ['cenonzero','penonzero','cezero','pezero'])
+
+xbottomdetail = pd.DataFrame(xbottomdetail, columns = ['bce','bpe','bsum','tce','tpe','tsum'])
+
+
+
+
+
+#for data
+Bf_Add_list.append((underlyval,round((xbottomdetail.iloc[3,2]/amountincr),2),round((xbottomdetail.iloc[3,5]/amountincr),2),round(amountincr,2),round(((botsum/3)/amountincr),2),round((atsum/amountincr),2),round(((topsum/3)/amountincr),2)))
+
+
+nfdata=pd.DataFrame(Nf_Add_list, columns = ['Time','mak','BP','TP','sn','val1','val2','val3'])
+bfdata=pd.DataFrame(Bf_Add_list, columns = ['makb','BPB','TPB', 'amtb','val4','val5','val6'])
+
+
+nfdata['makb']=bfdata['makb']
+nfdata['BPB']=bfdata['BPB']
+nfdata['TPB']=bfdata['TPB']
+nfdata['amtb']=bfdata['amtb']
+nfdata['val4']=bfdata['val4']
+nfdata['val5']=bfdata['val5']
+nfdata['val6']=bfdata['val6']
+
+
+
+
+
 
 
 def get_existing_file(drive_service, folder_id, file_name):
@@ -1465,16 +1519,32 @@ def generate_report(df):
 
     # Check if the file already exists in the folder
     file_id, existing_content = get_existing_file(drive_service, folder_id, file_name)
+    
 
     if file_id is not None:
         arr = existing_content.split('\n')
         header = arr[0].split(',')
-        updated_data = _process_data(arr[1:],header,df)
+        data_io = StringIO(existing_content)
+        df1 = pd.read_csv(data_io)
+        
+        
+        
+        #dadding data
+        comdata=pd.concat([df1, df], ignore_index=True)
+
+        
+        
+        
+        
+        
+        
+        #updated_data = _process_data(arr[1:],header,df)
+        
     
-        updated_df = pd.DataFrame(updated_data, columns=header)
+        #updated_df = pd.DataFrame(updated_data, columns=header)
         print('***** updated_df *****')
 
-        updated_csv_content =  updated_df.to_csv(index=False)
+        updated_csv_content =  comdata.to_csv(index=False)
 
         # Upload the updated content to the file
         media = MediaIoBaseUpload(io.BytesIO(updated_csv_content.encode('utf-8')), mimetype='text/csv')
@@ -1495,10 +1565,10 @@ def generate_report(df):
 
 
 if __name__ == "__main__":
-    rec = get_record();
+    #rec = get_record();
+    rec=nfdata.copy()
     try:
         if rec is not None:
-            print(rec)
             if MODE != 'prod':
                 print('[info]: This is running in dev mode, report will not be uploded')
             else:
@@ -1506,3 +1576,7 @@ if __name__ == "__main__":
             
     except:
         print('NO RECORD CREATED!')
+
+
+
+
